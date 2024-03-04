@@ -10,6 +10,21 @@ https://dev.socrata.com/foundry/data.cityofnewyork.us/7w4b-tj9d
 
 */
 
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+// Credentials
+$cred_header = array(
+	'http'=>array(
+		'method'=>"GET",
+		'header'=>"Authorization: token "
+	)
+);
+
+$cred_context = stream_context_create($cred_header);
+
+
 if (isset($_GET['kml'])) {
 	header($_SERVER["SERVER_PROTOCOL"] . " 200 OK");
 	header("Content-Type: text/plain");
@@ -45,7 +60,7 @@ if (isset($_GET['kml'])) {
                 <LineString>
                         <extrude>1</extrude>
                         <tessellate>1</tessellate>
-                        <altitudeMode>relativeToGround</altitudeMode>
+                        <altitudeMode>' . $_GET['alt_mode'] . '</altitudeMode>
                         <coordinates>' . $_GET['long_1'] . ',' . $_GET['lat_1'] . ',' . $_GET['height_1'] . ' ' . $_GET['long_2'] . ',' . $_GET['lat_2'] . ',' . $_GET['height_2'] . '</coordinates>
                 </LineString>
         </Placemark>
@@ -66,15 +81,15 @@ die();
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
      crossorigin=""></script>
-<link rel="stylesheet" href="nyckml.css"/>
-<script src="nyckml.js"></script>
+<link rel="stylesheet" href="/nyckml.css"/>
+<script src="/nyckml.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 
 <body>
 
 <h1>NYC Building KML Tool</h1>
-<h2><button disabled>Spreadsheet Based</button><button onclick="window.location.href='/new'">DB Based</button></h2>
+<h2><button onclick="window.location.href='/'">Spreadsheet Based</button><button disabled>DB Based</button></h2>
 
 <form method="get">
 
@@ -109,16 +124,16 @@ if (isset($_GET['input_address_1'])) {
 			$long_1 = $_GET['long_1'];
 		} else {
 			if (empty($_GET['input_address_1'])) {
-				// Get variables from spreadsheet
+				// Get variables from db
 				echo ("<p>For endpoint #1, you entered install number: " . $_GET['input_install_1'] . "</p>");
-				$index = intdiv($_GET['input_install_1'],10);
-                        	$offset = ($_GET['input_install_1'] % $index)-1;
-                        	if ($_GET['input_install_1'] % $index < 3) { $index -= 1;  $offset += 10; }
-                        	$sheet_get = file_get_contents("https://script.google.com/macros/s/AKfycbzuqh8zxiMzRq3NXl3HTUwWyKKcGacpNPXvX5G1UdgLhZvCtBKuT64f3dRGPna8C8rv/exec?method=data&secret=&sheet=Form%20Responses%201&offset=" . $index  . "&limit=" . $offset);
-				$address_1 = json_decode($sheet_get, true)[$_GET['input_install_1']]['location'];
-				$bin_1 = json_decode($sheet_get, true)[$_GET['input_install_1']]['bin'];
-				$lat_1 = json_decode($sheet_get, true)[$_GET['input_install_1']]['latitude'];
-				$long_1 = json_decode($sheet_get, true)[$_GET['input_install_1']]['longitude'];
+				$install_get = file_get_contents("http://db.grandsvc.mesh/api/v1/installs/" . $_GET['input_install_1']  . "/", false, $cred_context);
+				$install_json = json_decode($install_get);
+				$building_get = file_get_contents("http://db.grandsvc.mesh/api/v1/buildings/" . $install_json->building  . "/", false, $cred_context);
+				$building_json = json_decode($building_get);
+				$address_1 = $building_json->street_address . ", " . $building_json->city . ", " . $building_json->state . ", " . $building_json->zip_code;
+				$bin_1 = $building_json->bin;
+				$lat_1 = $building_json->latitude;
+				$long_1 = $building_json->longitude;
 			} else {
 				// Get variables from DCP dataset
 				echo ("<p>For endpoint #1, you entered address: " . $_GET['input_address_1'] . "</p>");
@@ -148,14 +163,14 @@ if (isset($_GET['input_address_1'])) {
 			if (empty($_GET['input_address_2'])) {
 				// Get variables from spreadsheet
 				echo ("<p>For endpoint #2, you entered install number: " . $_GET['input_install_2'] . "</p>");
-                        	$index = intdiv($_GET['input_install_2'],10);
-                        	$offset = ($_GET['input_install_2'] % $index)-1;
-                        	if ($_GET['input_install_2'] % $index < 3) { $index -= 1;  $offset += 10; }
-                        	$sheet_get = file_get_contents("https://script.google.com/macros/s/AKfycbzuqh8zxiMzRq3NXl3HTUwWyKKcGacpNPXvX5G1UdgLhZvCtBKuT64f3dRGPna8C8rv/exec?method=data&secret=&sheet=Form%20Responses%201&offset=" . $index  . "&limit=" . $offset);
-				$address_2 = json_decode($sheet_get, true)[$_GET['input_install_2']]['location'];
-                        	$bin_2 = json_decode($sheet_get, true)[$_GET['input_install_2']]['bin'];
-                        	$lat_2 = json_decode($sheet_get, true)[$_GET['input_install_2']]['latitude'];
-                        	$long_2 = json_decode($sheet_get, true)[$_GET['input_install_2']]['longitude'];
+				$install_get = file_get_contents("http://db.grandsvc.mesh/api/v1/installs/" . $_GET['input_install_2']  . "/", false, $cred_context);
+				$install_json = json_decode($install_get);
+				$building_get = file_get_contents("http://db.grandsvc.mesh/api/v1/buildings/" . $install_json->building  . "/", false, $cred_context);
+				$building_json = json_decode($building_get);
+				$address_2 = $building_json->street_address . ", " . $building_json->city . ", " . $building_json->state . ", " . $building_json->zip_code;
+				$bin_2 = $building_json->bin;
+				$lat_2 = $building_json->latitude;
+				$long_2 = $building_json->longitude;
 			} else {
 				// Get variables from DCP dataset
 				echo ("<p>For endpoint #2, you entered address: " . $_GET['input_address_2'] . "</p>");
@@ -183,7 +198,7 @@ if (isset($_GET['input_address_1'])) {
 <input type='radio' id='dob1' name='height_radio_1' value='dob' <?php if(isset($_GET['height_radio_1'])){if($_GET['height_radio_1']=='dob'){echo('checked');}} ?>>
 <label for='dob1'>DOB</label>
 <input type='radio' id='spreadsheet1' name='height_radio_1' value='spreadsheet' <?php if(isset($_GET['height_radio_1'])){if($_GET['height_radio_1']=='spreadsheet'){echo('checked');}} ?>>
-<label for='spreadsheet'>Spreadsheet</label>
+<label for='spreadsheet'>DB</label>
 <input type='number' name='height_manual_1' placeholder='Manual Entry (in meters)' value="<?php if(isset($_GET['height_manual_1'])) {echo($_GET['height_manual_1']);} ?>">
 </p>
 
@@ -191,7 +206,7 @@ if (isset($_GET['input_address_1'])) {
 <input type='radio' id='dob2' name='height_radio_2' value='dob' <?php if(isset($_GET['height_radio_2'])){if($_GET['height_radio_2']=='dob'){echo('checked');}} ?>>
 <label for='dob2'>DOB</label>
 <input type='radio' id='spreadsheet2' name='height_radio_2' value='spreadsheet' <?php if(isset($_GET['height_radio_2'])){if($_GET['height_radio_2']=='spreadsheet'){echo('checked');}} ?>>
-<label for='spreadsheet2'>Spreadsheet</label>
+<label for='spreadsheet2'>DB</label>
 <input type='number' name='height_manual_2' placeholder='Manual Entry (in meters)' value="<?php if(isset($_GET['height_manual_2'])) {echo($_GET['height_manual_2']);} ?>">
 </p>
 <p class="height_fields"><button type="submit">Next</button></p>
@@ -215,85 +230,79 @@ if (isset($_GET['input_address_1'])) {
 		if (empty($_GET['height_manual_1'])) {
 			// Get height using BIN from DOB dataset
 			if ($_GET['height_radio_1'] == 'dob') {
-        	                $dob_get = file_get_contents('https://data.cityofnewyork.us/resource/7w4b-tj9d.json?bin=' . $bin_1);
-                        	$meters_1 = json_decode($dob_get, true)['0']['heightroof'] * 0.3048;
+				$dob_get = file_get_contents('https://data.cityofnewyork.us/resource/7w4b-tj9d.json?bin=' . $bin_1);
+				$meters_1 = json_decode($dob_get, true)['0']['heightroof'] * 0.3048;
+				$alt_mode_1 = "relativeToGround";
 			}
-			// Get height using cell in spreadsheet
+			// Get height using cell in db
 			if ($_GET['height_radio_1'] == 'spreadsheet') {
-				// Use the Install # to query the spreadsheet directly
+				// Use the Install # to query the db directly
+				$alt_mode_1 = "absolute";
 				if (empty($_GET['input_address_1'])) {
-					$new_install = $_GET['input_install_1'] - 2;
-					$index = intdiv($new_install, 10);
-					$offset = $new_install % $index + 1;
-					$sheet_get = file_get_contents("https://script.google.com/macros/s/AKfycbyymyGxWMPV5ubpt9SeylHlZNCbZqsZOuKdYVoAwEXGwamorsTKgF2oMLKaBT6okZvs/exec?method=data&secret=&sheet=Form%20Responses%201&offset=" . $index  . "&limit=" . $offset);
-					$meters_1 = json_decode($sheet_get, true)[$_GET['input_install_1']]['altitude'];
+					$install_get = file_get_contents("http://db.grandsvc.mesh/api/v1/installs/" . $_GET['input_install_1']  . "/", false, $cred_context);
+					$install_json = json_decode($install_get);
+					$building_get = file_get_contents("http://db.grandsvc.mesh/api/v1/buildings/" . $install_json->building  . "/", false, $cred_context);
+					$building_json = json_decode($building_get);
+					$meters_1 = $building_json->altitude;
 				} else {
-					// Need to query spreadsheet using BIN to get Install #, then we can query spreadsheet for altitude
-					$query_raw = file_get_contents("https://script.google.com/macros/s/AKfycbyymyGxWMPV5ubpt9SeylHlZNCbZqsZOuKdYVoAwEXGwamorsTKgF2oMLKaBT6okZvs/exec?method=query&pwd=&type=bin&query=" . urlencode($bin_1));
-					$query_get = strstr($query_raw, "\n");
-					if (empty($query_get)) {
-						echo("How do you expect me to get the height from the spreadsheet if there are no matching BINs? Pick another source!");
-						$heights_fail = True;
-					} else {
-						$install_raw = strtok($query_get, ',');
-						$new_install = $install_raw - 2;
-						$index = intdiv($new_install, 10);
-                	                        $offset = $new_install % $index + 1;
-                                	        $sheet_get = file_get_contents("https://script.google.com/macros/s/AKfycbyymyGxWMPV5ubpt9SeylHlZNCbZqsZOuKdYVoAwEXGwamorsTKgF2oMLKaBT6okZvs/exec?method=data&secret=&sheet=Form%20Responses%201&offset=" . $index  . "&limit=" . $offset);
-						$meters_1 = json_decode($sheet_get, true)[intval($install_raw)]['altitude'];
-					}
+					// Get BIN from DCP dataset
+					$dcp_get = file_get_contents('https://geosearch.planninglabs.nyc/v2/search?text=' . urlencode($_GET['input_address_1']));
+					$bin_1 = json_decode($dcp_get, true)['features']['0']['properties']['addendum']['pad']['bin'];
+					$url = "http://db.grandsvc.mesh/api/v1/buildings/lookup/?bin=" . $bin_1;
+					$building_get = file_get_contents($url, false, $cred_context);
+					$building_json = json_decode($building_get);
+					$meters_1 = $building_json->results[0]->altitude;
 				}
 			}
 		} else {
 			// Use entered value for height
 			$meters_1 = $_GET['height_manual_1'];
+			$alt_mode_1 = "relativeToGround";
 		}
 		if (!$heights_fail) {
 			echo($meters_1 . "m | " . $meters_1*3.28084 . "ft</p>");
-                        echo("<input type='hidden' name='height_1' value='" . $meters_1 . "'>");
+            echo("<input type='hidden' name='height_1' value='" . $meters_1 . "'>");
+            echo("<input type='hidden' name='alt_mode' value='" . $alt_mode_1 . "'>");
 		}
 
 		// Endpoint 2
 		echo("<p>Height of endpoint #2: ");
-                if (empty($_GET['height_manual_2'])) {
-			// Get height using BIN from DOB dataset
-                        if ($_GET['height_radio_2'] == 'dob') {
-	                        $dob_get = file_get_contents('https://data.cityofnewyork.us/resource/7w4b-tj9d.json?bin=' . $bin_2);
-                	        $meters_2 = json_decode($dob_get, true)['0']['heightroof'] * 0.3048;
-			}
-			// Get height using cell in spreadsheet
-                        if ($_GET['height_radio_2'] == 'spreadsheet') {
-                                // Use the install # to query the spreadsheet directly
-                                if (empty($_GET['input_address_2'])) {
-					$new_install = $_GET['input_install_2'] - 2;
-                                        $index = intdiv($new_install, 10);
-                                        $offset = $new_install % $index + 1;
-                                        $sheet_get = file_get_contents("https://script.google.com/macros/s/AKfycbyymyGxWMPV5ubpt9SeylHlZNCbZqsZOuKdYVoAwEXGwamorsTKgF2oMLKaBT6okZvs/exec?method=data&secret=&sheet=Form%20Responses%201&offset=" . $index  . "&limit=" . $offset);
-                                        $meters_2 = json_decode($sheet_get, true)[$_GET['input_install_2']]['altitude'];
-                                } else {
-                                        // Need to query spreadsheet using BIN to get Install #, then we can query spreadsheet for altitude
-					$query_raw = file_get_contents("https://script.google.com/macros/s/AKfycbzuqh8zxiMzRq3NXl3HTUwWyKKcGacpNPXvX5G1UdgLhZvCtBKuT64f3dRGPna8C8rv/exec?method=query&pwd=&type=address&query=" . urlencode($_GET['input_address_2']));
-					$query_get = strstr($query_raw, "\n");
-					if (empty($query_get)) {
-						echo("How do you expect me to get the height from the spreadsheet if there are no matching BINs? Pick another source!");
-						$heights_fail = True;
+			if (empty($_GET['height_manual_2'])) {
+				// Get height using BIN from DOB dataset
+				if ($_GET['height_radio_2'] == 'dob') {
+					$dob_get = file_get_contents('https://data.cityofnewyork.us/resource/7w4b-tj9d.json?bin=' . $bin_2);
+					$meters_2 = json_decode($dob_get, true)['0']['heightroof'] * 0.3048;
+					$alt_mode_2 = "relativeToGround";
+				}
+				// Get height using cell in db
+				if ($_GET['height_radio_2'] == 'spreadsheet') {
+					// Use the Install # to query the db directly
+					$alt_mode_2 = "absolute";
+					if (empty($_GET['input_address_2'])) {
+						$install_get = file_get_contents("http://db.grandsvc.mesh/api/v1/installs/" . $_GET['input_install_2']  . "/", false, $cred_context);
+						$install_json = json_decode($install_get);
+						$building_get = file_get_contents("http://db.grandsvc.mesh/api/v1/buildings/" . $install_json->building  . "/", false, $cred_context);
+						$building_json = json_decode($building_get);
+						$meters_2 = $building_json->altitude;
 					} else {
-						$install_raw = strtok($query_get, ',');
-						$new_install = $install_raw - 2;
-						$index = intdiv($new_install, 10);
-						$offset = $new_install % $index + 1;
-						$sheet_get = file_get_contents("https://script.google.com/macros/s/AKfycbzuqh8zxiMzRq3NXl3HTUwWyKKcGacpNPXvX5G1UdgLhZvCtBKuT64f3dRGPna8C8rv/exec?method=data&secret=&sheet=Form%20Responses%201&offset=" . $index  . "&limit=" . $offset);
-						$meters_2 = json_decode($sheet_get, true)[intval($install_raw)]['altitude'];
+						// Get BIN from DCP dataset
+						$dcp_get = file_get_contents('https://geosearch.planninglabs.nyc/v2/search?text=' . urlencode($_GET['input_address_2']));
+						$bin_2 = json_decode($dcp_get, true)['features']['0']['properties']['addendum']['pad']['bin'];
+						$url = "http://db.grandsvc.mesh/api/v1/buildings/lookup/?bin=" . $bin_2;
+						$building_get = file_get_contents($url, false, $cred_context);
+						$building_json = json_decode($building_get);
+						$meters_2 = $building_json->results[0]->altitude;
 					}
-                                }
-                        }
-                } else {
-			// Use entered value for height
-			$meters_2 = $_GET['height_manual_2'];
-                }
+				}
+			} else {
+				// Use entered value for height
+				$meters_2 = $_GET['height_manual_2'];
+				$alt_mode_2 = "relativeToGround";
+			}
 		if (!$heights_fail) {
 			echo($meters_2 . "m | " . $meters_2*3.28084 . "ft</p>");
-                        echo("<input type='hidden' name='height_2' value='" . $meters_2 . "'>");
+            echo("<input type='hidden' name='height_2' value='" . $meters_2 . "'>");
+            echo("<input type='hidden' name='alt_mode' value='" . $alt_mode_2 . "'>");
 		}
 	}
 }

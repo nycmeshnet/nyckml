@@ -1,0 +1,22 @@
+body {
+	background-color: #C0C0C0;
+}
+.height_fields {
+        display:none;
+}
+.option_fields {
+        display:none;
+}
+:root{
+	--color-color-picker__controls: #000;
+	--fill-color-picker__controls: 0 0;
+	--height-color-picker__controls: 10em;
+	--shadow-color-picker__dialog: 1px 3px 6px rgba(0, 0, 0, 255);
+}
+.map {
+	height: 180px;
+}
+h2 button {
+	padding: 10px;
+    font-weight: bold;
+}
