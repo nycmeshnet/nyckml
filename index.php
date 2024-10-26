@@ -47,14 +47,6 @@ function hexToABGR($hex) {
 	return $alphaHex . $blueHex . $greenHex . $redHex;
 }
 
-// Credentials
-$cred_header = array(
-	'http'=>array(
-		'method'=>"GET",
-		'header'=>"Authorization: token 465031a28f29e0a2aa06a37aaca46ac33f64d7c9"
-	)
-);
-
 $cred_context = stream_context_create($cred_header);
 
 
