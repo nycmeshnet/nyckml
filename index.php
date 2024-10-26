@@ -10,7 +10,55 @@ https://dev.socrata.com/foundry/data.cityofnewyork.us/7w4b-tj9d
 
 */
 
-if (isset($_GET['kml'])) {
+/*
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+*/
+
+function hexToABGR($hex) {
+    // Remove the '#' if present
+    $hex = str_replace('#', '', $hex);
+    
+    // Convert hex to decimal values for ABGR
+    $decimal = hexdec($hex);
+
+    // Determine if alpha is included in the hex color
+    if (strlen($hex) == 8) {
+		// 8 characters indicates alpha is present
+		$red = ($decimal >> 24) & 0xFF;
+		$green = ($decimal >> 16) & 0xFF;
+		$blue = ($decimal >> 8) & 0xFF;
+		$alpha = dechex($decimal & 0xFF);
+	} else {
+		$red = ($decimal >> 16) & 0xFF;
+		$green = ($decimal >> 8) & 0xFF;
+		$blue = $decimal & 0xFF;
+		$alpha = "ff";
+	}
+	
+	// Pad hexadecimal components with leading zeros if necessary
+	$redHex = str_pad(dechex($red), 2, '0', STR_PAD_LEFT);
+	$greenHex = str_pad(dechex($green), 2, '0', STR_PAD_LEFT);
+	$blueHex = str_pad(dechex($blue), 2, '0', STR_PAD_LEFT);
+	$alphaHex = str_pad($alpha, 2, '0', STR_PAD_LEFT);
+
+	// Return ABGR as hex
+	return $alphaHex . $blueHex . $greenHex . $redHex;
+}
+
+// Credentials
+$cred_header = array(
+	'http'=>array(
+		'method'=>"GET",
+		'header'=>"Authorization: token 465031a28f29e0a2aa06a37aaca46ac33f64d7c9"
+	)
+);
+
+$cred_context = stream_context_create($cred_header);
+
+
+if (isset($_GET['download'])) {
 	header($_SERVER["SERVER_PROTOCOL"] . " 200 OK");
 	header("Content-Type: text/plain");
 	header("Content-Disposition: attachment; filename=" . $_GET['bin_1'] . "-" . $_GET['bin_2'] . ".kml");
@@ -19,7 +67,7 @@ if (isset($_GET['kml'])) {
 	<name>' . $_GET['bin_1'] . "-" . $_GET['bin_2'] . '.kml</name>
         <Style id="inline">
                 <LineStyle>
-                        <color>' . $_GET['color'] . '</color>
+                        <color>' . hexToABGR($_GET['color']) . '</color>
                         <width>2</width>
                 </LineStyle>
         </Style>
@@ -35,23 +83,147 @@ if (isset($_GET['kml'])) {
         </StyleMap>
         <Style id="inline1">
                 <LineStyle>
-                        <color>' . $_GET['color'] . '</color>
+                        <color>' . hexToABGR($_GET['color']) . '</color>
                         <width>2</width>
                 </LineStyle>
         </Style>
         <Placemark>
-                <name>' . $_GET['bin_1'] . "-" . $_GET['bin_1'] . '</name>
+                <name>' . $_GET['bin_1'] . "-" . $_GET['bin_2'] . '</name>
                 <styleUrl>#inline0</styleUrl>
                 <LineString>
                         <extrude>1</extrude>
                         <tessellate>1</tessellate>
-                        <altitudeMode>relativeToGround</altitudeMode>
+                        <altitudeMode>' . $_GET['alt_mode'] . '</altitudeMode>
                         <coordinates>' . $_GET['long_1'] . ',' . $_GET['lat_1'] . ',' . $_GET['height_1'] . ' ' . $_GET['long_2'] . ',' . $_GET['lat_2'] . ',' . $_GET['height_2'] . '</coordinates>
                 </LineString>
         </Placemark>
 </Document>
 </kml>');
 die();
+} elseif (isset($_GET['display'])) {
+	$kmlContent = '<?xml version="1.0" encoding="UTF-8"?>
+	<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:kml="http://www.opengis.net/kml/2.2" xmlns:atom="http://www.w3.org/2005/Atom">
+	<Document>
+		<name>' . $_GET['bin_1'] . '-' . $_GET['bin_2'] . '.kml</name>
+		<Style id="inline">
+			<LineStyle>
+				<color>' . hexToABGR($_GET['color']) . '</color>
+				<width>2</width>
+			</LineStyle>
+		</Style>
+		<StyleMap id="inline0">
+			<Pair>
+				<key>normal</key>
+				<styleUrl>#inline1</styleUrl>
+			</Pair>
+			<Pair>
+				<key>highlight</key>
+				<styleUrl>#inline</styleUrl>
+			</Pair>
+		</StyleMap>
+		<Style id="inline1">
+			<LineStyle>
+				<color>' . hexToABGR($_GET['color']) . '</color>
+				<width>2</width>
+			</LineStyle>
+		</Style>
+		<Placemark>
+			<name>' . $_GET['bin_1'] . '-' . $_GET['bin_2'] . '</name>
+			<styleUrl>#inline0</styleUrl>
+			<LineString>
+				<extrude>1</extrude>
+				<tessellate>1</tessellate>
+				<altitudeMode>relativeToGround</altitudeMode>
+				<coordinates>' . $_GET['long_1'] . ',' . $_GET['lat_1'] . ',' . $_GET['height_1'] . ' ' . $_GET['long_2'] . ',' . $_GET['lat_2'] . ',' . $_GET['height_2'] . '</coordinates>
+			</LineString>
+		</Placemark>
+	</Document>
+	</kml>';
+
+	// Create temporary file to hold KML content
+	$tempKmlFile = tempnam(sys_get_temp_dir(), 'kml');
+	file_put_contents($tempKmlFile, $kmlContent);
+
+	// Prepare cURL request
+	$ch = curl_init();
+	curl_setopt($ch, CURLOPT_URL, 'http://10.100.252.241:8080'); // Endpoint URL
+	curl_setopt($ch, CURLOPT_POST, true);
+	curl_setopt($ch, CURLOPT_POSTFIELDS, ['file' => new CURLFile($tempKmlFile)]);
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+	// Execute cURL request
+	$response = curl_exec($ch);
+
+	// Check for errors
+	if(curl_errno($ch)) {
+		echo 'Error: ' . curl_error($ch);
+	} else {
+		$imageData = base64_encode($response);
+	}
+
+	// Close cURL session
+	curl_close($ch);
+
+	// Delete temporary file
+	unlink($tempKmlFile);
+} elseif (isset($_GET['fresnel'])) {
+    // Define the URL to submit the form
+    $url = "https://www.radiofresnel.com/";
+
+    // Define the payload with the values you want to submit
+    $data = [
+        "name1" => $_GET['bin_1'],
+        "lon1" => $_GET['long_1'],
+        "lon1_coef" => $_GET['lon1_coef'] ?? 1,
+        "lat1" => $_GET['lat_1'],
+        "lat1_coef" => $_GET['lat1_coef'] ?? 1,
+        "altitude1" => round($_GET['height_1']),
+        "alt1_coef" => $_GET['alt1_coef'] ?? 1,
+        "name2" => $_GET['bin_2'],
+        "lon2" => $_GET['long_2'],
+        "lon2_coef" => $_GET['lon2_coef'] ?? 1,
+        "lat2" => $_GET['lat_2'],
+        "lat2_coef" => $_GET['lat2_coef'] ?? 1,
+        "altitude2" => round($_GET['height_2']),
+        "alt2_coef" => $_GET['alt2_coef'] ?? 1,
+        "frequency" => $_GET['frequency'] ?? 5710,
+        "frequency_coefficient" => $_GET['frequency_coefficient'] ?? 1,
+        "zone" => $_GET['zone'] ?? 2.0,
+        "colour" => $_GET['color'] . "ff",
+        "my-form" => "Get kml"
+    ];
+
+    // Initialize cURL session
+    $ch = curl_init();
+
+    // Set cURL options
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_POST, 1);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+    // Execute the POST request
+    $response = curl_exec($ch);
+    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+    // Close cURL session
+    curl_close($ch);
+
+    // Check if the request was successful
+    if ($http_code == 200) {
+        // Set headers to download the KML file
+        header($_SERVER["SERVER_PROTOCOL"] . " 200 OK");
+        header("Content-Type: application/vnd.google-earth.kml+xml");
+        header("Content-Disposition: attachment; filename=" . $data['name1'] . "-" . $data['name2'] . ".kml");
+
+        // Output the response as a KML file
+        echo str_replace("absolute", $_GET['alt_mode'], $response);
+		die();
+    } else {
+        // If the request failed, output an error message
+        echo "Failed to submit the form. HTTP Status Code: " . $http_code;
+        echo "Response: " . htmlspecialchars($response);
+    }
 }
 
 ?>
@@ -67,6 +239,8 @@ die();
      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
      crossorigin=""></script>
 <link rel="stylesheet" href="nyckml.css"/>
+<link rel="stylesheet" href="coloris.css"/>
+<script src="coloris.js"></script>
 <script src="nyckml.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
@@ -74,7 +248,6 @@ die();
 <body>
 
 <h1>NYC Building KML Tool</h1>
-<h2><button disabled>Spreadsheet Based</button><button onclick="window.location.href='/new'">DB Based</button></h2>
 
 <form method="get">
 
@@ -109,16 +282,16 @@ if (isset($_GET['input_address_1'])) {
 			$long_1 = $_GET['long_1'];
 		} else {
 			if (empty($_GET['input_address_1'])) {
-				// Get variables from spreadsheet
+				// Get variables from db
 				echo ("<p>For endpoint #1, you entered install number: " . $_GET['input_install_1'] . "</p>");
-				$index = intdiv($_GET['input_install_1'],10);
-                        	$offset = ($_GET['input_install_1'] % $index)-1;
-                        	if ($_GET['input_install_1'] % $index < 3) { $index -= 1;  $offset += 10; }
-                        	$sheet_get = file_get_contents("https://script.google.com/macros/s/AKfycbzuqh8zxiMzRq3NXl3HTUwWyKKcGacpNPXvX5G1UdgLhZvCtBKuT64f3dRGPna8C8rv/exec?method=data&secret=&sheet=Form%20Responses%201&offset=" . $index  . "&limit=" . $offset);
-				$address_1 = json_decode($sheet_get, true)[$_GET['input_install_1']]['location'];
-				$bin_1 = json_decode($sheet_get, true)[$_GET['input_install_1']]['bin'];
-				$lat_1 = json_decode($sheet_get, true)[$_GET['input_install_1']]['latitude'];
-				$long_1 = json_decode($sheet_get, true)[$_GET['input_install_1']]['longitude'];
+				$install_get = file_get_contents("https://db.nycmesh.net/api/v1/installs/" . $_GET['input_install_1']  . "/", false, $cred_context);
+				$install_json = json_decode($install_get);
+				$building_get = file_get_contents("https://db.nycmesh.net/api/v1/buildings/" . $install_json->building->id  . "/", false, $cred_context);
+				$building_json = json_decode($building_get);
+				$address_1 = $building_json->street_address . ", " . $building_json->city . ", " . $building_json->state . ", " . $building_json->zip_code;
+				$bin_1 = $building_json->bin;
+				$lat_1 = $building_json->latitude;
+				$long_1 = $building_json->longitude;
 			} else {
 				// Get variables from DCP dataset
 				echo ("<p>For endpoint #1, you entered address: " . $_GET['input_address_1'] . "</p>");
@@ -148,14 +321,14 @@ if (isset($_GET['input_address_1'])) {
 			if (empty($_GET['input_address_2'])) {
 				// Get variables from spreadsheet
 				echo ("<p>For endpoint #2, you entered install number: " . $_GET['input_install_2'] . "</p>");
-                        	$index = intdiv($_GET['input_install_2'],10);
-                        	$offset = ($_GET['input_install_2'] % $index)-1;
-                        	if ($_GET['input_install_2'] % $index < 3) { $index -= 1;  $offset += 10; }
-                        	$sheet_get = file_get_contents("https://script.google.com/macros/s/AKfycbzuqh8zxiMzRq3NXl3HTUwWyKKcGacpNPXvX5G1UdgLhZvCtBKuT64f3dRGPna8C8rv/exec?method=data&secret=&sheet=Form%20Responses%201&offset=" . $index  . "&limit=" . $offset);
-				$address_2 = json_decode($sheet_get, true)[$_GET['input_install_2']]['location'];
-                        	$bin_2 = json_decode($sheet_get, true)[$_GET['input_install_2']]['bin'];
-                        	$lat_2 = json_decode($sheet_get, true)[$_GET['input_install_2']]['latitude'];
-                        	$long_2 = json_decode($sheet_get, true)[$_GET['input_install_2']]['longitude'];
+				$install_get = file_get_contents("https://db.nycmesh.net/api/v1/installs/" . $_GET['input_install_2']  . "/", false, $cred_context);
+				$install_json = json_decode($install_get);
+				$building_get = file_get_contents("https://db.nycmesh.net/api/v1/buildings/" . $install_json->building->id  . "/", false, $cred_context);
+				$building_json = json_decode($building_get);
+				$address_2 = $building_json->street_address . ", " . $building_json->city . ", " . $building_json->state . ", " . $building_json->zip_code;
+				$bin_2 = $building_json->bin;
+				$lat_2 = $building_json->latitude;
+				$long_2 = $building_json->longitude;
 			} else {
 				// Get variables from DCP dataset
 				echo ("<p>For endpoint #2, you entered address: " . $_GET['input_address_2'] . "</p>");
@@ -183,7 +356,7 @@ if (isset($_GET['input_address_1'])) {
 <input type='radio' id='dob1' name='height_radio_1' value='dob' <?php if(isset($_GET['height_radio_1'])){if($_GET['height_radio_1']=='dob'){echo('checked');}} ?>>
 <label for='dob1'>DOB</label>
 <input type='radio' id='spreadsheet1' name='height_radio_1' value='spreadsheet' <?php if(isset($_GET['height_radio_1'])){if($_GET['height_radio_1']=='spreadsheet'){echo('checked');}} ?>>
-<label for='spreadsheet'>Spreadsheet</label>
+<label for='spreadsheet'>DB</label>
 <input type='number' name='height_manual_1' placeholder='Manual Entry (in meters)' value="<?php if(isset($_GET['height_manual_1'])) {echo($_GET['height_manual_1']);} ?>">
 </p>
 
@@ -191,7 +364,7 @@ if (isset($_GET['input_address_1'])) {
 <input type='radio' id='dob2' name='height_radio_2' value='dob' <?php if(isset($_GET['height_radio_2'])){if($_GET['height_radio_2']=='dob'){echo('checked');}} ?>>
 <label for='dob2'>DOB</label>
 <input type='radio' id='spreadsheet2' name='height_radio_2' value='spreadsheet' <?php if(isset($_GET['height_radio_2'])){if($_GET['height_radio_2']=='spreadsheet'){echo('checked');}} ?>>
-<label for='spreadsheet2'>Spreadsheet</label>
+<label for='spreadsheet2'>DB</label>
 <input type='number' name='height_manual_2' placeholder='Manual Entry (in meters)' value="<?php if(isset($_GET['height_manual_2'])) {echo($_GET['height_manual_2']);} ?>">
 </p>
 <p class="height_fields"><button type="submit">Next</button></p>
@@ -215,85 +388,79 @@ if (isset($_GET['input_address_1'])) {
 		if (empty($_GET['height_manual_1'])) {
 			// Get height using BIN from DOB dataset
 			if ($_GET['height_radio_1'] == 'dob') {
-        	                $dob_get = file_get_contents('https://data.cityofnewyork.us/resource/7w4b-tj9d.json?bin=' . $bin_1);
-                        	$meters_1 = json_decode($dob_get, true)['0']['heightroof'] * 0.3048;
+				$dob_get = file_get_contents('https://data.cityofnewyork.us/resource/7w4b-tj9d.json?bin=' . $bin_1);
+				$meters_1 = json_decode($dob_get, true)['0']['heightroof'] * 0.3048;
+				$alt_mode_1 = "relativeToGround";
 			}
-			// Get height using cell in spreadsheet
+			// Get height using cell in db
 			if ($_GET['height_radio_1'] == 'spreadsheet') {
-				// Use the Install # to query the spreadsheet directly
+				// Use the Install # to query the db directly
+				$alt_mode_1 = "absolute";
 				if (empty($_GET['input_address_1'])) {
-					$new_install = $_GET['input_install_1'] - 2;
-					$index = intdiv($new_install, 10);
-					$offset = $new_install % $index + 1;
-					$sheet_get = file_get_contents("https://script.google.com/macros/s/AKfycbyymyGxWMPV5ubpt9SeylHlZNCbZqsZOuKdYVoAwEXGwamorsTKgF2oMLKaBT6okZvs/exec?method=data&secret=&sheet=Form%20Responses%201&offset=" . $index  . "&limit=" . $offset);
-					$meters_1 = json_decode($sheet_get, true)[$_GET['input_install_1']]['altitude'];
+					$install_get = file_get_contents("https://db.nycmesh.net/api/v1/installs/" . $_GET['input_install_1']  . "/", false, $cred_context);
+					$install_json = json_decode($install_get);
+					$building_get = file_get_contents("https://db.nycmesh.net/api/v1/buildings/" . $install_json->building->id  . "/", false, $cred_context);
+					$building_json = json_decode($building_get);
+					$meters_1 = $building_json->altitude;
 				} else {
-					// Need to query spreadsheet using BIN to get Install #, then we can query spreadsheet for altitude
-					$query_raw = file_get_contents("https://script.google.com/macros/s/AKfycbyymyGxWMPV5ubpt9SeylHlZNCbZqsZOuKdYVoAwEXGwamorsTKgF2oMLKaBT6okZvs/exec?method=query&pwd=&type=bin&query=" . urlencode($bin_1));
-					$query_get = strstr($query_raw, "\n");
-					if (empty($query_get)) {
-						echo("How do you expect me to get the height from the spreadsheet if there are no matching BINs? Pick another source!");
-						$heights_fail = True;
-					} else {
-						$install_raw = strtok($query_get, ',');
-						$new_install = $install_raw - 2;
-						$index = intdiv($new_install, 10);
-                	                        $offset = $new_install % $index + 1;
-                                	        $sheet_get = file_get_contents("https://script.google.com/macros/s/AKfycbyymyGxWMPV5ubpt9SeylHlZNCbZqsZOuKdYVoAwEXGwamorsTKgF2oMLKaBT6okZvs/exec?method=data&secret=&sheet=Form%20Responses%201&offset=" . $index  . "&limit=" . $offset);
-						$meters_1 = json_decode($sheet_get, true)[intval($install_raw)]['altitude'];
-					}
+					// Get BIN from DCP dataset
+					$dcp_get = file_get_contents('https://geosearch.planninglabs.nyc/v2/search?text=' . urlencode($_GET['input_address_1']));
+					$bin_1 = json_decode($dcp_get, true)['features']['0']['properties']['addendum']['pad']['bin'];
+					$url = "https://db.nycmesh.net/api/v1/buildings/lookup/?bin=" . $bin_1;
+					$building_get = file_get_contents($url, false, $cred_context);
+					$building_json = json_decode($building_get);
+					$meters_1 = $building_json->results[0]->altitude;
 				}
 			}
 		} else {
 			// Use entered value for height
 			$meters_1 = $_GET['height_manual_1'];
+			$alt_mode_1 = "relativeToGround";
 		}
 		if (!$heights_fail) {
 			echo($meters_1 . "m | " . $meters_1*3.28084 . "ft</p>");
-                        echo("<input type='hidden' name='height_1' value='" . $meters_1 . "'>");
+            echo("<input type='hidden' name='height_1' value='" . $meters_1 . "'>");
+            echo("<input type='hidden' name='alt_mode' value='" . $alt_mode_1 . "'>");
 		}
 
 		// Endpoint 2
 		echo("<p>Height of endpoint #2: ");
-                if (empty($_GET['height_manual_2'])) {
-			// Get height using BIN from DOB dataset
-                        if ($_GET['height_radio_2'] == 'dob') {
-	                        $dob_get = file_get_contents('https://data.cityofnewyork.us/resource/7w4b-tj9d.json?bin=' . $bin_2);
-                	        $meters_2 = json_decode($dob_get, true)['0']['heightroof'] * 0.3048;
-			}
-			// Get height using cell in spreadsheet
-                        if ($_GET['height_radio_2'] == 'spreadsheet') {
-                                // Use the install # to query the spreadsheet directly
-                                if (empty($_GET['input_address_2'])) {
-					$new_install = $_GET['input_install_2'] - 2;
-                                        $index = intdiv($new_install, 10);
-                                        $offset = $new_install % $index + 1;
-                                        $sheet_get = file_get_contents("https://script.google.com/macros/s/AKfycbyymyGxWMPV5ubpt9SeylHlZNCbZqsZOuKdYVoAwEXGwamorsTKgF2oMLKaBT6okZvs/exec?method=data&secret=&sheet=Form%20Responses%201&offset=" . $index  . "&limit=" . $offset);
-                                        $meters_2 = json_decode($sheet_get, true)[$_GET['input_install_2']]['altitude'];
-                                } else {
-                                        // Need to query spreadsheet using BIN to get Install #, then we can query spreadsheet for altitude
-					$query_raw = file_get_contents("https://script.google.com/macros/s/AKfycbzuqh8zxiMzRq3NXl3HTUwWyKKcGacpNPXvX5G1UdgLhZvCtBKuT64f3dRGPna8C8rv/exec?method=query&pwd=&type=address&query=" . urlencode($_GET['input_address_2']));
-					$query_get = strstr($query_raw, "\n");
-					if (empty($query_get)) {
-						echo("How do you expect me to get the height from the spreadsheet if there are no matching BINs? Pick another source!");
-						$heights_fail = True;
+			if (empty($_GET['height_manual_2'])) {
+				// Get height using BIN from DOB dataset
+				if ($_GET['height_radio_2'] == 'dob') {
+					$dob_get = file_get_contents('https://data.cityofnewyork.us/resource/7w4b-tj9d.json?bin=' . $bin_2);
+					$meters_2 = json_decode($dob_get, true)['0']['heightroof'] * 0.3048;
+					$alt_mode_2 = "relativeToGround";
+				}
+				// Get height using cell in db
+				if ($_GET['height_radio_2'] == 'spreadsheet') {
+					// Use the Install # to query the db directly
+					$alt_mode_2 = "absolute";
+					if (empty($_GET['input_address_2'])) {
+						$install_get = file_get_contents("https://db.nycmesh.net/api/v1/installs/" . $_GET['input_install_2']  . "/", false, $cred_context);
+						$install_json = json_decode($install_get);
+						$building_get = file_get_contents("https://db.nycmesh.net/api/v1/buildings/" . $install_json->building->id  . "/", false, $cred_context);
+						$building_json = json_decode($building_get);
+						$meters_2 = $building_json->altitude;
 					} else {
-						$install_raw = strtok($query_get, ',');
-						$new_install = $install_raw - 2;
-						$index = intdiv($new_install, 10);
-						$offset = $new_install % $index + 1;
-						$sheet_get = file_get_contents("https://script.google.com/macros/s/AKfycbzuqh8zxiMzRq3NXl3HTUwWyKKcGacpNPXvX5G1UdgLhZvCtBKuT64f3dRGPna8C8rv/exec?method=data&secret=&sheet=Form%20Responses%201&offset=" . $index  . "&limit=" . $offset);
-						$meters_2 = json_decode($sheet_get, true)[intval($install_raw)]['altitude'];
+						// Get BIN from DCP dataset
+						$dcp_get = file_get_contents('https://geosearch.planninglabs.nyc/v2/search?text=' . urlencode($_GET['input_address_2']));
+						$bin_2 = json_decode($dcp_get, true)['features']['0']['properties']['addendum']['pad']['bin'];
+						$url = "https://db.nycmesh.net/api/v1/buildings/lookup/?bin=" . $bin_2;
+						$building_get = file_get_contents($url, false, $cred_context);
+						$building_json = json_decode($building_get);
+						$meters_2 = $building_json->results[0]->altitude;
 					}
-                                }
-                        }
-                } else {
-			// Use entered value for height
-			$meters_2 = $_GET['height_manual_2'];
-                }
+				}
+			} else {
+				// Use entered value for height
+				$meters_2 = $_GET['height_manual_2'];
+				$alt_mode_2 = "relativeToGround";
+			}
 		if (!$heights_fail) {
 			echo($meters_2 . "m | " . $meters_2*3.28084 . "ft</p>");
-                        echo("<input type='hidden' name='height_2' value='" . $meters_2 . "'>");
+            echo("<input type='hidden' name='height_2' value='" . $meters_2 . "'>");
+            echo("<input type='hidden' name='alt_mode' value='" . $alt_mode_2 . "'>");
 		}
 	}
 }
@@ -301,30 +468,24 @@ if (isset($_GET['input_address_1'])) {
 ?>
 
 <p class="option_fields">I am ready to export the KML. Select the options you want and let's do this!</p>
-<p class="option_fields">Line Color: <input type="text" id="color" name="color" value="ff0000ff"></p>
-<p class="option_fields"><input type="checkbox" id="fresnel" name="fresnel"><label for="fresnel">Fresnel</label></p>
-<input class="option_fields" type="submit" value="Download KML" name="kml" />
+<p class="option_fields">Line Color: <input type="text" id="color" name="color" value="<?php if (isset($_GET['color'])) { echo $_GET['color']; } ?>" data-coloris></p>
+<input class="option_fields" type="submit" value="Download KML" name="download" />
+<input class="option_fields" type="submit" value="Download Fresnel" name="fresnel" />
+<input class="option_fields" type="submit" value="Display KML (beta)" name="display" />
 
 </form>
 
-<button onclick="goBack();">Go Back</button><button onclick="window.location.href=window.location.origin + window.location.pathname">Start Over</button>
+<h2><button onclick="goBack();">Go Back</button><button onclick="window.location.href=window.location.origin + window.location.pathname">Start Over</button></h2>
 
-<script src="./color-picker.js"></script>
+<?php
+
+if ($imageData) {
+	echo '<img src="data:image/png;base64,' . $imageData. '" alt="Screenshot" style="width: 100%">';
+}
+
+?>
+
 <script>
-const picker = new CP(document.querySelector('#color'));
-picker.on('change', function (r, g, b, a) {
-	var red = r.toString(16);
-	var green = g.toString(16);
-	var blue = b.toString(16);
-	var alpha = Math.trunc(a*255).toString(16);
-
-	if (red.length == 1) {red = 0 + red}
-	if (green.length == 1) {green = 0 + green}
-	if (blue.length == 1) {blue = 0 + blue}
-	if (alpha.length == 1) {alpha = 0 + alpha}
-
-	this.source.value = alpha + blue + green + red;
-});
 
 function getKML(name1, name2, col, lat1, long1, height1, lat2, long2, height2) {
 	fetch('./kml.php?' + new URLSearchParams({
