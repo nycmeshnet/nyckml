@@ -46,17 +46,14 @@ function hexToABGR($hex) {
 	return $alphaHex . $blueHex . $greenHex . $redHex;
 }
 
-<<<<<<< HEAD
-=======
 // Credentials
 $cred_header = array(
 	'http'=>array(
 		'method'=>"GET",
-		'header'=>"Authorization: token " . $MESHDB_SECRET_DO_NOT_SHARE
+		'header'=>"Authorization: token " . $_ENV["MESHDB_KEY"]
 	)
 );
 
->>>>>>> 734c19e (pre-k8s resync)
 $cred_context = stream_context_create($cred_header);
 
 

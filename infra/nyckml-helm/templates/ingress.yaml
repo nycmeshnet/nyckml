@@ -1,0 +1,18 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "nyckml-helm.fullname" . }}
+  labels:
+    {{- include "nyckml-helm.labels" . | nindent 4 }}
+spec:
+  rules:
+    - host: {{ .Values.nyckml.fqdn }}
+      http:
+        paths:
+          - path: "/"
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: {{ include "nyckml-helm.fullname" . }}-frontend
+                port:
+                  number: {{ .Values.frontend.service.port }}
