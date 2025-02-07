@@ -1,5 +1,4 @@
 <?php
-
 /*
 
 Typed Address to Real Address, BINs, and Coords
@@ -19,7 +18,7 @@ error_reporting(E_ALL);
 function hexToABGR($hex) {
     // Remove the '#' if present
     $hex = str_replace('#', '', $hex);
-    
+
     // Convert hex to decimal values for ABGR
     $decimal = hexdec($hex);
 
@@ -36,7 +35,7 @@ function hexToABGR($hex) {
 		$blue = $decimal & 0xFF;
 		$alpha = "ff";
 	}
-	
+
 	// Pad hexadecimal components with leading zeros if necessary
 	$redHex = str_pad(dechex($red), 2, '0', STR_PAD_LEFT);
 	$greenHex = str_pad(dechex($green), 2, '0', STR_PAD_LEFT);
@@ -47,6 +46,17 @@ function hexToABGR($hex) {
 	return $alphaHex . $blueHex . $greenHex . $redHex;
 }
 
+<<<<<<< HEAD
+=======
+// Credentials
+$cred_header = array(
+	'http'=>array(
+		'method'=>"GET",
+		'header'=>"Authorization: token " . $MESHDB_SECRET_DO_NOT_SHARE
+	)
+);
+
+>>>>>>> 734c19e (pre-k8s resync)
 $cred_context = stream_context_create($cred_header);
 
 
@@ -401,6 +411,7 @@ if (isset($_GET['input_address_1'])) {
 					$url = "https://db.nycmesh.net/api/v1/buildings/lookup/?bin=" . $bin_1;
 					$building_get = file_get_contents($url, false, $cred_context);
 					$building_json = json_decode($building_get);
+					print_r($building_json);
 					$meters_1 = $building_json->results[0]->altitude;
 				}
 			}
