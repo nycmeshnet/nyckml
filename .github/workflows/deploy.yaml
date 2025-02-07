@@ -54,26 +54,3 @@ jobs:
     secrets: inherit
     needs: deploy_to_dev3
     if: github.ref == 'refs/heads/main'
-
-
-
-
-name: Build Image
-permissions: read-all
-
-on:
-  workflow_call:
-    inputs:
-      environment:
-        required: true
-        type: string
-      image_tag:
-        required: true
-        type: string
-
-jobs:
-  push_to_registry_env:
-    name: Push Docker Image to Docker Hub
-    runs-on: ubuntu-latest
-    environment: ${{ inputs.environment }}
-    steps:
