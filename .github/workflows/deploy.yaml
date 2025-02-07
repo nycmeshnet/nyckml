@@ -10,7 +10,7 @@ on:
 permissions: read-all
 
 jobs:
-  push_to_registry_env:
+  push_to_registry:
     name: Push Docker Image to Docker Hub
     runs-on: ubuntu-latest
     steps:
@@ -20,8 +20,8 @@ jobs:
       - name: Log in to Docker Hub
         uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
       
       - name: Extract metadata (tags, labels) for Docker
         id: meta
@@ -44,6 +44,7 @@ jobs:
     with:
       environment: dev3
     secrets: inherit
+    #needs: push_to_registry
     #if: github.ref == 'refs/heads/main'
 
   deploy_to_prod1:
