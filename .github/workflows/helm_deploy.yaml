@@ -39,7 +39,7 @@ jobs:
           scp ${{ secrets.SSH_USER }}@${{ secrets.SSH_TARGET_IP }}:~/.kube/config ./
           helm upgrade \
             nyckml \
-            nyckml-helm \
+            infra/nyckml-helm \
             --install \
             --kubeconfig ./config \
             --kube-apiserver https://${{ secrets.SSH_TARGET_IP }}:6443 \
