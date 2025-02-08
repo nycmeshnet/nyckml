@@ -6,7 +6,7 @@ frontend:
   service:
     type: ClusterIP
     port: 80
-  replicaCount: 1
+  replicaCount: 2
   image:
     repository: danielhmetro/nyckml
     # This sets the pull policy for images.

@@ -145,7 +145,7 @@ die();
 
 	// Prepare cURL request
 	$ch = curl_init();
-	curl_setopt($ch, CURLOPT_URL, 'http://10.100.252.241:8080'); // Endpoint URL
+	curl_setopt($ch, CURLOPT_URL, $_ENV["NYCKML_BE_URL"]); // Endpoint URL
 	curl_setopt($ch, CURLOPT_POST, true);
 	curl_setopt($ch, CURLOPT_POSTFIELDS, ['file' => new CURLFile($tempKmlFile)]);
 	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
