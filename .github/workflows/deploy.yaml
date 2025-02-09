@@ -55,4 +55,4 @@ jobs:
       environment: prod1
     secrets: inherit
     needs: deploy_to_dev3
-    if: github.ref == 'refs/heads/main'
+    #if: github.ref == 'refs/heads/main'
