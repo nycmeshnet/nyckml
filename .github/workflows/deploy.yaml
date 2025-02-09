@@ -36,7 +36,7 @@ jobs:
           context: ./frontend
           file: ./frontend/Dockerfile
           push: true
-          tags: ${{ inputs.image_tag }}
+          tags: danielhmetro/nyckml:latest
           labels: ${{ steps.meta.outputs.labels }}
 
   deploy_to_dev3:
