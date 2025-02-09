@@ -44,7 +44,7 @@ jobs:
     with:
       environment: dev3
     secrets: inherit
-    #needs: push_to_registry
+    needs: push_to_registry
     #if: github.ref == 'refs/heads/main'
 
   deploy_to_prod1:
