@@ -238,8 +238,8 @@ die();
      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
      crossorigin=""></script>
 <link rel="stylesheet" href="nyckml.css"/>
-<link rel="stylesheet" href="coloris.css"/>
-<script src="coloris.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mdbassit/Coloris@latest/dist/coloris.min.css"/>
+<script src="https://cdn.jsdelivr.net/gh/mdbassit/Coloris@latest/dist/coloris.min.js"></script>
 <script src="nyckml.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
