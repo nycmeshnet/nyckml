@@ -36,7 +36,7 @@ jobs:
           context: ./frontend
           file: ./frontend/Dockerfile
           push: true
-          tags: latest
+          tags: ${{ inputs.image_tag }}
           labels: ${{ steps.meta.outputs.labels }}
 
   deploy_to_dev3:
