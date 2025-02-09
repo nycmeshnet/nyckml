@@ -50,7 +50,7 @@ function hexToABGR($hex) {
 $cred_header = array(
 	'http'=>array(
 		'method'=>"GET",
-		'header'=>"Authorization: token " . $_ENV["MESHDB_KEY"]
+		'header'=>"Authorization: token " . getenv"MESHDB_KEY")
 	)
 );
 
