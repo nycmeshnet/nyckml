@@ -46,17 +46,14 @@ function hexToABGR($hex) {
 	return $alphaHex . $blueHex . $greenHex . $redHex;
 }
 
-<<<<<<< HEAD
-=======
 // Credentials
 $cred_header = array(
 	'http'=>array(
 		'method'=>"GET",
-		'header'=>"Authorization: token " . $MESHDB_SECRET_DO_NOT_SHARE
+		'header'=>"Authorization: token " . getenv("MESHDB_KEY")
 	)
 );
 
->>>>>>> 734c19e (pre-k8s resync)
 $cred_context = stream_context_create($cred_header);
 
 
@@ -148,7 +145,7 @@ die();
 
 	// Prepare cURL request
 	$ch = curl_init();
-	curl_setopt($ch, CURLOPT_URL, 'http://10.100.252.241:8080'); // Endpoint URL
+	curl_setopt($ch, CURLOPT_URL, $_ENV["NYCKML_BE_URL"]); // Endpoint URL
 	curl_setopt($ch, CURLOPT_POST, true);
 	curl_setopt($ch, CURLOPT_POSTFIELDS, ['file' => new CURLFile($tempKmlFile)]);
 	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -241,8 +238,8 @@ die();
      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
      crossorigin=""></script>
 <link rel="stylesheet" href="nyckml.css"/>
-<link rel="stylesheet" href="coloris.css"/>
-<script src="coloris.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mdbassit/Coloris@latest/dist/coloris.min.css"/>
+<script src="https://cdn.jsdelivr.net/gh/mdbassit/Coloris@latest/dist/coloris.min.js"></script>
 <script src="nyckml.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
