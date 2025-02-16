@@ -5,7 +5,7 @@ Typed Address to Real Address, BINs, and Coords
 https://geosearch.planninglabs.nyc/docs/
 
 BIN to Height
-https://dev.socrata.com/foundry/data.cityofnewyork.us/7w4b-tj9d
+https://data.cityofnewyork.us/City-Government/Building-Footprints/5zhs-2jue/about_data
 
 */
 
@@ -387,7 +387,7 @@ if (isset($_GET['input_address_1'])) {
 		if (empty($_GET['height_manual_1'])) {
 			// Get height using BIN from DOB dataset
 			if ($_GET['height_radio_1'] == 'dob') {
-				$dob_get = file_get_contents('https://data.cityofnewyork.us/resource/7w4b-tj9d.json?bin=' . $bin_1);
+				$dob_get = file_get_contents('https://data.cityofnewyork.us/resource/5zhs-2jue.json?bin=' . $bin_1);
 				$meters_1 = json_decode($dob_get, true)['0']['heightroof'] * 0.3048;
 				$alt_mode_1 = "relativeToGround";
 			}
@@ -428,7 +428,7 @@ if (isset($_GET['input_address_1'])) {
 			if (empty($_GET['height_manual_2'])) {
 				// Get height using BIN from DOB dataset
 				if ($_GET['height_radio_2'] == 'dob') {
-					$dob_get = file_get_contents('https://data.cityofnewyork.us/resource/7w4b-tj9d.json?bin=' . $bin_2);
+					$dob_get = file_get_contents('https://data.cityofnewyork.us/resource/5zhs-2jue.json?bin=' . $bin_2);
 					$meters_2 = json_decode($dob_get, true)['0']['heightroof'] * 0.3048;
 					$alt_mode_2 = "relativeToGround";
 				}
