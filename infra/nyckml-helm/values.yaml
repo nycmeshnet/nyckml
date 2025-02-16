@@ -13,6 +13,14 @@ frontend:
     pullPolicy: Always
     # Overrides the image tag whose default is the chart appVersion.
     tag: latest
+  livenessProbe:
+    httpGet:
+      path: /status.php
+      port: http
+  readinessProbe:
+    httpGet:
+      path: /status.php
+      port: http
   resources:
     limits:
       cpu: 256m
@@ -31,16 +39,6 @@ podAnnotations: {}
 # This is for setting Kubernetes Labels to a Pod.
 # For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
 podLabels: {}
-
-# This is to setup the liveness and readiness probes more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
-# livenessProbe:
-#   httpGet:
-#     path: /
-#     port: http
-# readinessProbe:
-#   httpGet:
-#     path: /
-#     port: http
 
 nodeSelector: {}
 
