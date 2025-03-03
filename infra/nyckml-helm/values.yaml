@@ -29,6 +29,9 @@ frontend:
       cpu: 100m
       memory: 64Mi
 
+imageCredentials:
+  registry: docker.io
+
 # This is to override the chart name.
 nameOverride: ""
 fullnameOverride: ""
