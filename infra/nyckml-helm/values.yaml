@@ -8,7 +8,7 @@ frontend:
     port: 80
   replicaCount: 2
   image:
-    repository: danielhmetro/nyckml
+    repository: docker.io/danielhmetro/nyckml
     # This sets the pull policy for images.
     pullPolicy: Always
     # Overrides the image tag whose default is the chart appVersion.
@@ -28,6 +28,9 @@ frontend:
     requests:
       cpu: 100m
       memory: 64Mi
+
+imageCredentials:
+  registry: docker.io
 
 # This is to override the chart name.
 nameOverride: ""
