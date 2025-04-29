@@ -55,7 +55,7 @@ jobs:
             --set imageCredentials.email="${{ secrets.PULL_SECRET_EMAIL }}" \
             --set nyckml.meshdb_key="${{ secrets.MESHDB_KEY }}" \
             --set nyckml.backend_url="${{ secrets.BACKEND_URL }}" \
-            --set frontend.image.digest="${{ inputs.image_digest }}" \s
+            --set frontend.image.digest="${{ inputs.image_digest }}" \
             --set nyckml.fqdn="${{ vars.FQDN }}"
 
           # Rolling restart
