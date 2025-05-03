@@ -31,7 +31,11 @@ spec:
       {{- end }}
       containers:
         - name: {{ .Chart.Name }}-frontend
+          {{- if .Values.frontend.image.digest }}
+          image: "{{ .Values.frontend.image.repository }}@{{ .Values.frontend.image.digest }}"
+          {{- else }}
           image: "{{ .Values.frontend.image.repository }}:{{ .Values.frontend.image.tag }}"
+          {{- end }}
           imagePullPolicy: {{ .Values.frontend.image.pullPolicy }}
           envFrom:
           - secretRef:
