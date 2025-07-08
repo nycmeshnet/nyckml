@@ -13,7 +13,7 @@ jobs:
         id: build
         uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83
         with:
-          context: .
+          context: ./frontend
           file: ./frontend/Dockerfile
           push: false
           tags: "test:latest"
