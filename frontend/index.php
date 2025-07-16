@@ -388,7 +388,6 @@ if (isset($_GET['input_address_1'])) {
 			// Get height using BIN from DOB dataset
 			if ($_GET['height_radio_1'] == 'dob') {
 				$dob_get = file_get_contents('https://data.cityofnewyork.us/resource/5zhs-2jue.json?bin=' . $bin_1);
-				print_r($dob_get);
 				$meters_1 = json_decode($dob_get, true)['0']['height_roof'] * 0.3048;
 				$alt_mode_1 = "relativeToGround";
 			}
@@ -429,7 +428,6 @@ if (isset($_GET['input_address_1'])) {
 				// Get height using BIN from DOB dataset
 				if ($_GET['height_radio_2'] == 'dob') {
 					$dob_get = file_get_contents('https://data.cityofnewyork.us/resource/5zhs-2jue.json?bin=' . $bin_2);
-					print_r($dob_get);
 					$meters_2 = json_decode($dob_get, true)['0']['height_roof'] * 0.3048;
 					$alt_mode_2 = "relativeToGround";
 				}
