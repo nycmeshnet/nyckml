@@ -408,7 +408,6 @@ if (isset($_GET['input_address_1'])) {
 					$url = "https://db.nycmesh.net/api/v1/buildings/lookup/?bin=" . $bin_1;
 					$building_get = file_get_contents($url, false, $cred_context);
 					$building_json = json_decode($building_get);
-					print_r($building_json);
 					$meters_1 = $building_json->results[0]->altitude;
 				}
 			}
