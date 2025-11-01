@@ -4,8 +4,9 @@
 
 frontend:
   service:
-    type: ClusterIP
+    type: NodePort
     port: 80
+    nodePort: 30003
   replicaCount: 2
   image:
     repository: docker.io/danielhmetro/nyckml
