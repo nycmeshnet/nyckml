@@ -206,9 +206,12 @@
 
 	// ---- Wiring --------------------------------------------------------------------------------------------------
 
-	document.getElementById('go_back').addEventListener('click', function () {
-		history.back();
-	});
+	const goBack = document.getElementById('go_back');
+	if (goBack) {
+		goBack.addEventListener('click', function () {
+			window.location.href = goBack.dataset.href;
+		});
+	}
 	document.getElementById('start_over').addEventListener('click', function () {
 		window.location.href = window.location.pathname;
 	});
@@ -218,8 +221,11 @@
 		setupEndpointMap(2, data.endpoints[2]);
 	}
 	if (data.step === 3) {
-		Coloris({el: '#color', alpha: false, format: 'hex'});
 		setupOverviewMap(data.endpoints[1], data.endpoints[2], document.getElementById('color'));
 		setupPreview(data.endpoints[1], data.endpoints[2]);
+		// Coloris builds its picker on DOMContentLoaded, which comes after this deferred script runs.
+		document.addEventListener('DOMContentLoaded', function () {
+			Coloris({el: '#color', alpha: false, format: 'hex'});
+		});
 	}
 })();

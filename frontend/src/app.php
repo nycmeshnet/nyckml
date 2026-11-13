@@ -76,8 +76,15 @@ $errors = [];
 $step = 1;
 $endpoints = [];
 
+// The step being asked for. The Next buttons send step=2 and step=3, and Go Back links to the step before.
+// Links from before there was a step param are worked out from which fields they have.
+$requested = (int) param('step');
+if (!$requested) {
+	$requested = isset($_GET['height_manual_1']) ? 3 : (isset($_GET['input_address_1']) ? 2 : 1);
+}
+
 // Step 1 submitted: look up both endpoints.
-if (isset($_GET['input_address_1'])) {
+if ($requested >= 2) {
 	foreach ([1, 2] as $n) {
 		$address = param("input_address_$n");
 		$install = ltrim(param("input_install_$n"), '#');
@@ -108,7 +115,7 @@ if (isset($_GET['input_address_1'])) {
 }
 
 // Step 2 submitted: work out both heights.
-if ($step === 2 && isset($_GET['height_manual_1'])) {
+if ($step === 2 && $requested >= 3) {
 	foreach ([1, 2] as $n) {
 		if (param("height_radio_$n") === '' && param("height_manual_$n") === '') {
 			$errors = ['Not sure how you expect me to do anything without knowing from where I should get the height. Pick something!'];
@@ -149,6 +156,11 @@ if ($step === 3) {
 	}
 	$link = link_stats($endpoints[1], $endpoints[2]);
 }
+
+// Go Back reloads the previous step from this URL, so everything entered so far stays filled in.
+$back_url = $step > 1
+	? '?' . http_build_query(['step' => $step - 1] + array_diff_key($_GET, ['download' => 1, 'fresnel' => 1]))
+	: '';
 
 // What nyckml.js needs to draw the maps and the 3D preview.
 $page_data = [
@@ -201,7 +213,7 @@ $page_data = [
 <p>Enter the <?= $which ?> address: <input name="input_address_<?= $n ?>" value="<?= h(param("input_address_$n")) ?>">
 or an install number: <input name="input_install_<?= $n ?>" inputmode="numeric" size="8" value="<?= h(param("input_install_$n")) ?>"></p>
 <?php endforeach ?>
-<p><button type="submit">Next</button></p>
+<p><button type="submit" name="step" value="2">Next</button></p>
 
 <?php else: ?>
 
@@ -240,10 +252,12 @@ or an install number: <input name="input_install_<?= $n ?>" inputmode="numeric" 
 </div>
 
 <?php if ($step === 2): ?>
-<p class="note">DOB is the roof height from NYC's building footprints. DB is the altitude stored in MeshDB.
-A manual entry wins over either.</p>
-<p><button type="submit">Next</button></p>
+<p class="note">DOB: roof height from NYC Open Data Building Footprints<br>
+DB: altitude of building object stored in MeshDB<br>
+Manual: meters above ground level that will override DOB and DB selections</p>
+<p><button type="submit" name="step" value="3">Next</button></p>
 <?php else: ?>
+<input type="hidden" name="step" value="3">
 <div id="overview_map" class="map"></div>
 <p class="link-stats">
 	Distance: <?= number_format($link['distance']) ?> m (<?= number_format($link['distance'] / 1609.344, 2) ?> mi)
@@ -269,7 +283,10 @@ zone: <input type="number" name="zone" min="0.5" max="6" step="0.1" value="<?= h
 
 </form>
 
-<h2><button type="button" id="go_back">Go Back</button><button type="button" id="start_over">Start Over</button></h2>
+<h2>
+<?php if ($back_url): ?><button type="button" id="go_back" data-href="<?= h($back_url) ?>">Go Back</button><?php endif ?>
+<button type="button" id="start_over">Start Over</button>
+</h2>
 
 </body>
 
