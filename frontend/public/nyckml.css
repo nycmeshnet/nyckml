@@ -36,10 +36,6 @@ body {
 	width: 16em;
 	max-width: 100%;
 }
-.entered, .note {
-	color: #333;
-	font-size: 0.9em;
-}
 .map {
 	height: 250px;
 	margin: 0.5em 0;

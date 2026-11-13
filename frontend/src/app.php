@@ -62,6 +62,17 @@ function resolve_endpoint(int $n): array {
 	return $endpoint;
 }
 
+// Step 2 again, with a different GeoSearch result filled in for endpoint #$n.
+function pick_match_url(int $n, array $match): string {
+	return '?' . http_build_query([
+		"input_address_$n" => $match['address'],
+		"address_$n" => $match['address'],
+		"bin_$n" => $match['bin'],
+		"lat_$n" => $match['lat'],
+		"long_$n" => $match['long'],
+	] + $_GET);
+}
+
 function format_height(float $meters): string {
 	return number_format($meters, 1) . ' m | ' . number_format($meters / METERS_PER_FOOT, 1) . ' ft';
 }
@@ -230,6 +241,13 @@ or an install number: <input name="input_install_<?= $n ?>" inputmode="numeric" 
 
 	<p class="entered">You entered <?= $endpoint['install'] !== '' ? 'install number ' . h($endpoint['install']) : 'address ' . h(param("input_address_$n")) ?></p>
 	<p>Matched Address: <?= h($endpoint['address']) ?></p>
+	<?php if ($step === 2 && !empty($endpoint['alternatives'])): ?>
+	<p class="note">Not the right one? Other matches:
+	<?php foreach ($endpoint['alternatives'] as $i => $match): ?>
+		<?= $i ? '&middot;' : '' ?> <a href="<?= h(pick_match_url($n, $match)) ?>"><?= h(strtok($match['address'], ',') . ', ' . $match['borough'] . ' ' . $match['zip']) ?></a>
+	<?php endforeach ?>
+	</p>
+	<?php endif ?>
 	<p>BIN: <?= h($endpoint['bin'] ?: 'none') ?></p>
 	<p>Coordinates: <span id="coords_<?= $n ?>"><?= h($endpoint['lat']) ?>, <?= h($endpoint['long']) ?></span>
 	<?php if ($step === 2): ?><a href="#" class="reset" data-endpoint="<?= $n ?>">(reset)</a><?php endif ?></p>
@@ -271,7 +289,7 @@ Manual: meters above ground level that will override DOB and DB selections</p>
 zone: <input type="number" name="zone" min="0.5" max="6" step="0.1" value="<?= h($zone) ?>"></p>
 <p class="actions">
 	<button type="submit" name="download" value="1">Download KML</button>
-	<button type="submit" name="fresnel" value="1">Download Fresnel</button>
+	<button type="submit" name="fresnel" value="1">Download KML with Fresnel</button>
 	<button type="button" id="display">Display KML</button>
 	<label><input type="checkbox" id="show_fresnel" checked> show 1st Fresnel zone</label>
 </p>
@@ -287,6 +305,8 @@ zone: <input type="number" name="zone" min="0.5" max="6" step="0.1" value="<?= h
 <?php if ($back_url): ?><button type="button" id="go_back" data-href="<?= h($back_url) ?>">Go Back</button><?php endif ?>
 <button type="button" id="start_over">Start Over</button>
 </h2>
+
+<p><a href="https://github.com/nycmeshnet/nyckml" target="_blank" rel="noopener">https://github.com/nycmeshnet/nyckml</a></p>
 
 </body>
 

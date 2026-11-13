@@ -82,19 +82,55 @@ function is_real_bin(string $bin): bool {
 
 // ---- Endpoints -------------------------------------------------------------------------------------------------
 
-// Typed address -> ['address', 'bin', 'lat', 'long'] via NYC Planning's GeoSearch.
+const ADDRESS_ABBREVIATIONS = [
+	'st' => 'street', 'ave' => 'avenue', 'av' => 'avenue', 'pl' => 'place', 'rd' => 'road', 'blvd' => 'boulevard',
+	'ct' => 'court', 'dr' => 'drive', 'ln' => 'lane', 'pkwy' => 'parkway', 'ter' => 'terrace', 'hwy' => 'highway',
+	'sq' => 'square', 'n' => 'north', 's' => 'south', 'e' => 'east', 'w' => 'west',
+];
+
+// "20 W 34th St." -> "20 west 34 street", so typed addresses can be compared with GeoSearch labels.
+function normalize_address(string $text): string {
+	$words = preg_split('/\s+/', strtolower(preg_replace('/[^a-z0-9]+/i', ' ', $text)), -1, PREG_SPLIT_NO_EMPTY);
+	$words = array_map(fn($word) => ADDRESS_ABBREVIATIONS[$word] ?? preg_replace('/^(\d+)(st|nd|rd|th)$/', '$1', $word), $words);
+	return implode(' ', $words);
+}
+
+// Typed address -> ['address', 'bin', 'lat', 'long', 'alternatives'] via NYC Planning's GeoSearch.
+// GeoSearch gives most partial matches the same score, so "53 bridge st" can come back as "53 BR COURT" first.
+// This prefers a result whose house number and street are what was typed, and keeps a few other results
+// as 'alternatives' so the user can pick a different one.
 function lookup_address(string $text): array {
-	$data = http_get_json(GEOSEARCH_API . '?' . http_build_query(['text' => $text, 'size' => 1]));
-	$feature = $data['features'][0] ?? null;
-	if (!$feature) {
-		throw new LookupError("couldn't find an NYC address matching \"$text\".");
-	}
-	return [
+	$data = http_get_json(GEOSEARCH_API . '?' . http_build_query(['text' => $text, 'size' => 10]));
+	$candidates = array_map(fn($feature) => [
 		'address' => $feature['properties']['label'],
 		'bin' => (string) ($feature['properties']['addendum']['pad']['bin'] ?? ''),
 		'lat' => (float) $feature['geometry']['coordinates'][1],
 		'long' => (float) $feature['geometry']['coordinates'][0],
-	];
+		'borough' => $feature['properties']['borough'] ?? '',
+		'zip' => $feature['properties']['postalcode'] ?? '',
+	], $data['features'] ?? []);
+	if (!$candidates) {
+		throw new LookupError("couldn't find an NYC address matching \"$text\".");
+	}
+
+	$typed = normalize_address($text) . ' ';
+	$best = $candidates[0];
+	foreach ($candidates as $candidate) {
+		if (str_starts_with($typed, normalize_address(strtok($candidate['address'], ',')) . ' ')) {
+			$best = $candidate;
+			break;
+		}
+	}
+
+	$seen = [$best['address'] . $best['bin'] => true];
+	$best['alternatives'] = [];
+	foreach ($candidates as $candidate) {
+		if (count($best['alternatives']) < 5 && !isset($seen[$candidate['address'] . $candidate['bin']])) {
+			$seen[$candidate['address'] . $candidate['bin']] = true;
+			$best['alternatives'][] = $candidate;
+		}
+	}
+	return $best;
 }
 
 // NYC Mesh install number -> ['address', 'bin', 'lat', 'long'] via MeshDB.
