@@ -40,9 +40,6 @@ spec:
           envFrom:
           - secretRef:
               name: {{ include "nyckml-helm.fullname" . }}-frontend-secrets
-          env:
-          - name: NYCKML_BE_URL
-            value: {{ .Values.nyckml.backend_url }}
           ports:
             - name: http
               containerPort: {{ .Values.frontend.service.port }}

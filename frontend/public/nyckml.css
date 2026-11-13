@@ -1,0 +1,61 @@
+body {
+	background-color: #C0C0C0;
+	max-width: 1100px;
+	margin: 0 auto;
+	padding: 0 16px;
+}
+:root{
+	--color-color-picker__controls: #000;
+	--fill-color-picker__controls: 0 0;
+	--height-color-picker__controls: 10em;
+	--shadow-color-picker__dialog: 1px 3px 6px rgba(0, 0, 0, 255);
+}
+[hidden] {
+	display: none !important;
+}
+.errors {
+	border: 2px solid #a00000;
+	background-color: #f4dede;
+	padding: 0 12px;
+	margin-bottom: 1em;
+}
+.endpoints {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 16px;
+}
+.endpoint {
+	flex: 1 1 400px;
+	min-width: 0;
+	overflow-wrap: anywhere;
+}
+.endpoint p {
+	margin: 0.5em 0;
+}
+.endpoint input[type=number] {
+	width: 16em;
+	max-width: 100%;
+}
+.entered, .note {
+	color: #333;
+	font-size: 0.9em;
+}
+.map {
+	height: 250px;
+	margin: 0.5em 0;
+}
+.preview {
+	height: 500px;
+	margin: 0.5em 0;
+}
+.actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+}
+h2 button {
+	padding: 10px;
+	font-weight: bold;
+	margin-right: 8px;
+}

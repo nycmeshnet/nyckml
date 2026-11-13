@@ -1,12 +1,5 @@
 version: 2
 updates:
-- package-ecosystem: "pip"
-  directory: "/backend/"
-  schedule:
-    interval: "cron"
-    cronjob: "41 5 * * *"
-  assignees:
-   - "danielhmetro"
 - package-ecosystem: "docker"
   directory: "/frontend"
   schedule:
