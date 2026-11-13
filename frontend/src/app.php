@@ -306,7 +306,7 @@ zone: <input type="number" name="zone" min="0.5" max="6" step="0.1" value="<?= h
 <button type="button" id="start_over">Start Over</button>
 </h2>
 
-<p><a href="https://github.com/nycmeshnet/nyckml" target="_blank" rel="noopener">https://github.com/nycmeshnet/nyckml</a></p>
+<p><a href="https://github.com/nycmeshnet/nyckml" target="_blank" rel="noopener">GitHub</a></p>
 
 </body>
 
